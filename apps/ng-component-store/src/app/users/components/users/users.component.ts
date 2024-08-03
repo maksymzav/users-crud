@@ -48,7 +48,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 export class UsersComponent implements OnDestroy {
   protected data$: Observable<User[]>;
   protected displayedColumns = ['id', 'name', 'username', 'email', 'actions'];
-  protected editedUser$: Observable<User | null>;
+  protected editedUser$: Observable<Map<number, User | null>>;
   private subscription = new Subscription();
 
   constructor(private usersStore: UsersStore) {
@@ -57,12 +57,12 @@ export class UsersComponent implements OnDestroy {
   }
 
   onEdit(user: User) {
-    const subscription = this.usersStore.enableEditModeOn(user);
+    const subscription = this.usersStore.enableEditModeOn({ id: user.id, user });
     this.subscription.add(subscription);
   }
 
-  onSave() {
-    const subscription = this.usersStore.updateUser();
+  onSave(userId: number) {
+    const subscription = this.usersStore.updateUser(userId);
     this.subscription.add(subscription);
   }
 

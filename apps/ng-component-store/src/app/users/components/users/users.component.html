@@ -1,3 +1,5 @@
+@let editedUser = editedUser$ | async;
+
 <table mat-table [dataSource]="data$" class="mat-elevation-z2">
 
   <ng-container matColumnDef="id">
@@ -31,8 +33,8 @@
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef></th>
     <td mat-cell *matCellDef="let element" data-test="users-actions-column">
-      @if ((editedUser$ | async)?.id === element.id) {
-        <button mat-button (click)="onSave()">Save</button>
+      @if (editedUser?.has(element.id)) {
+        <button mat-button (click)="onSave(element.id)">Save</button>
       } @else {
         <button mat-button (click)="onEdit(element)">Edit</button>
       }
