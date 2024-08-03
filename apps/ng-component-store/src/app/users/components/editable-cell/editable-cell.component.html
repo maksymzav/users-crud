@@ -1,0 +1,10 @@
+@let editedUser = editedUser$ | async;
+@let isEditing = editedUser?.id === user.id;
+
+@if (isEditing && editableColumns[columnName]) {
+  <mat-form-field appearance="fill" data-test="users-cell-edit-enabled">
+    <input matInput [ngModel]="user[columnName]" (ngModelChange)="updateValue($event)">
+  </mat-form-field>
+} @else {
+  <span>{{ user[columnName] }}</span>
+}
