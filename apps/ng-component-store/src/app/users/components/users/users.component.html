@@ -1,5 +1,14 @@
 @let editedUser = editedUser$ | async;
 
+<div class="users-table-header">
+  <h1>Users</h1>
+  @if (globalEditInProgress$ | async){
+    <button mat-raised-button (click)="saveAll()">Save All</button>
+  } @else {
+    <button mat-raised-button (click)="editAll()" data-test="users-edit-all-button">Edit all</button>
+  }
+
+</div>
 <table mat-table [dataSource]="data$" class="mat-elevation-z2">
 
   <ng-container matColumnDef="id">

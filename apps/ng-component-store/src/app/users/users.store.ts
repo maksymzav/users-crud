@@ -8,6 +8,7 @@ import { UsersService } from '@data-access/users';
 export type UsersList = EntityState<User>
 
 export interface UsersState {
+  globalEditInProgress: boolean,
   editedUser: Map<number, User>;
   users: UsersList,
 }
@@ -16,28 +17,44 @@ const adapter: EntityAdapter<User> = createEntityAdapter();
 const selectors = adapter.getSelectors();
 
 const initialState: UsersState = {
+  globalEditInProgress: false,
   editedUser: new Map(),
   users: adapter.getInitialState()
 };
 
 @Injectable()
 export class UsersStore extends ComponentStore<UsersState> implements OnStoreInit {
+  usersList$: Observable<User[]>;
+  editedUser$: Observable<Map<number, User>>;
+  globalEditInProgress$: Observable<boolean>;
 
-  private usersService = inject(UsersService);
-  usersList$: Observable<User[]> = this.getUsersListSelector();
-  editedUser$: Observable<Map<number, User>> = this.getEditedUserSelector();
-  setUsersList: (usersList: User[]) => Subscription = this.getUsersListUpdater();
-  enableEditModeOn: ({ id, user }: {
-    id: number,
-    user: User
-  }) => Subscription = this.getEditModeEnabledUserUpdater();
-  disableEditModeOn: (id: number) => Subscription = this.getEditModeDisabledUserUpdater();
-  patchEditedUser: (update: {id: number, user: Partial<User>}) => Subscription = this.getEditedUserUpdater();
-  fetchUsersList = this.getFetchAllUsersEffect();
-  updateUser = this.getUpdateUserEffect();
+  setUsersList: (usersList: User[]) => Subscription;
+  enableEditModeOn: ({ id, user }: { id: number, user: User }) => Subscription;
+  disableEditModeOn: (id: number) => Subscription;
+  patchEditedUser: (update: { id: number, user: Partial<User> }) => Subscription;
+
+  editAllUsers: () => void;
+  fetchUsersList: () => Subscription;
+  updateUser: (userId: number) => Subscription;
+
+  private usersService: UsersService;
 
   constructor() {
     super(initialState);
+    this.usersService = inject(UsersService);
+
+    this.usersList$ = this.getUsersListSelector();
+    this.editedUser$ = this.getEditedUserSelector();
+    this.globalEditInProgress$ = this.getIsGlobalEditInProgressSelector();
+
+    this.setUsersList = this.getUsersListUpdater();
+    this.enableEditModeOn = this.getEditModeEnabledUserUpdater();
+    this.disableEditModeOn = this.getEditModeDisabledUserUpdater();
+    this.patchEditedUser = this.getEditedUserUpdater();
+
+    this.editAllUsers = this.getEditAllUsersUpdater();
+    this.fetchUsersList = this.getFetchAllUsersEffect();
+    this.updateUser = this.getUpdateUserEffect();
   }
 
   ngrxOnStoreInit(): void {
@@ -51,6 +68,10 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
 
   private getEditedUserSelector() {
     return this.select<Map<number, User>>(({ editedUser }) => editedUser);
+  }
+
+  private getIsGlobalEditInProgressSelector() {
+    return this.select<boolean>(({ globalEditInProgress }) => globalEditInProgress);
   }
 
   private getUsersListUpdater() {
@@ -78,9 +99,16 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
       state.editedUser.set(id, user);
       return {
         ...state,
-        editedUser: new Map(state.editedUser),
+        editedUser: new Map(state.editedUser)
       };
     });
+  }
+
+  private getAllUsersMap(state: UsersState) {
+    return state.users.ids.reduce((acc, id) => {
+      acc.set(id, {});
+      return acc;
+    }, new Map());
   }
 
   private getEditModeDisabledUserUpdater() {
@@ -98,6 +126,14 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
       });
       return state;
     });
+  }
+
+  private getEditAllUsersUpdater() {
+    return this.updater<void>((state: UsersState) => ({
+      ...state,
+      editedUser: this.getAllUsersMap(state),
+      globalEditInProgress: true
+    }));
   }
 
   private getFetchAllUsersEffect() {

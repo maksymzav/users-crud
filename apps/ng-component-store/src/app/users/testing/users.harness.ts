@@ -10,6 +10,7 @@ export class UsersHarness extends ComponentHarness {
 
   private getHeaderRowHarness = this.locatorFor(MatHeaderRowHarness);
   private getRowHarnesses = this.locatorForAll(MatRowHarness);
+  private getEditAllButton = this.locatorFor('[data-test="users-edit-all-button"]');
 
   async getColumnTitles(): Promise<string[]> {
     const headerRowHarness = await this.getHeaderRowHarness();
@@ -34,6 +35,11 @@ export class UsersHarness extends ComponentHarness {
 
   async enableRowEditing(index: number): Promise<void> {
     return this.clickActionsButtonOnRow(index);
+  }
+
+  async enableTableEditing(): Promise<void> {
+    const button = await this.getEditAllButton();
+    await button.click();
   }
 
   async saveRowChanges(index: number): Promise<void> {

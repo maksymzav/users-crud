@@ -61,4 +61,12 @@ describe('UsersComponent', () => {
     expect(firstRowData).toEqual(['0', newName, newUsername, newEmail, 'Edit']);
     expect(secondRowData).toEqual(['1', 'api-name2', 'api-username2', 'api-email2@test.com', 'Edit']);
   });
+
+  it('makes all rows editable when you click the "edit all" button', async () => {
+    await util.mockUsersCall(UsersTestingUtil.twoUsersList);
+
+    await util.usersHarness.enableTableEditing();
+    expect(await util.usersHarness.isRowEditable(0)).toBe(true);
+    expect(await util.usersHarness.isRowEditable(1)).toBe(true);
+  });
 });

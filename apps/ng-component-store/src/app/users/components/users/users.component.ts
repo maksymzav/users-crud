@@ -49,11 +49,13 @@ export class UsersComponent implements OnDestroy {
   protected data$: Observable<User[]>;
   protected displayedColumns = ['id', 'name', 'username', 'email', 'actions'];
   protected editedUser$: Observable<Map<number, User | null>>;
+  protected globalEditInProgress$: Observable<boolean>;
   private subscription = new Subscription();
 
   constructor(private usersStore: UsersStore) {
     this.data$ = this.usersStore.usersList$;
     this.editedUser$ = this.usersStore.editedUser$;
+    this.globalEditInProgress$ = this.usersStore.globalEditInProgress$;
   }
 
   onEdit(user: User) {
@@ -68,5 +70,13 @@ export class UsersComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  editAll() {
+    this.usersStore.editAllUsers();
+  }
+
+  saveAll() {
+
   }
 }
