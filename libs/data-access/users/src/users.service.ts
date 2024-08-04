@@ -20,4 +20,8 @@ export class UsersService {
   updateUser(updatedUser: Partial<User>): Observable<User>{
     return this.httpClient.put<User>(`${this.apiLink}/users/${updatedUser.id}`, updatedUser);
   }
+
+  updateBulkUsers(updatedUsers: Record<number, User>): Observable<Record<number, User>> {
+    return this.httpClient.put<Record<number, User>>(`${this.apiLink}/users/bulk`, updatedUsers);
+  }
 }

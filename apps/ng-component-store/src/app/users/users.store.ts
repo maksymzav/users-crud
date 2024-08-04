@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { ComponentStore, OnStoreInit } from '@ngrx/component-store';
 import { User } from './types/user.interface';
-import { EMPTY, exhaustMap, Observable, Subscription, tap, withLatestFrom } from 'rxjs';
+import { catchError, EMPTY, exhaustMap, Observable, of, Subscription, tap, withLatestFrom } from 'rxjs';
 import { createEntityAdapter, EntityAdapter, EntityState, Update } from '@ngrx/entity';
 import { UsersService } from '@data-access/users';
 
@@ -32,10 +32,12 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
   enableEditModeOn: ({ id, user }: { id: number, user: User }) => Subscription;
   disableEditModeOn: (id: number) => Subscription;
   patchEditedUser: (update: { id: number, user: Partial<User> }) => Subscription;
+  setGlobalUserEditInProgress: (globalEditInProgress: boolean) => Subscription;
 
-  editAllUsers: () => void;
+  setEditedUsers: (userIds: number[]) => void;
   fetchUsersList: () => Subscription;
   updateUser: (userId: number) => Subscription;
+  updateAllEditedUsers: () => Subscription;
 
   private usersService: UsersService;
 
@@ -51,10 +53,12 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
     this.enableEditModeOn = this.getEditModeEnabledUserUpdater();
     this.disableEditModeOn = this.getEditModeDisabledUserUpdater();
     this.patchEditedUser = this.getEditedUserUpdater();
+    this.setGlobalUserEditInProgress = this.getGlobalEditInProgressUpdater();
 
-    this.editAllUsers = this.getEditAllUsersUpdater();
+    this.setEditedUsers = this.getEditBulkUsersUpdater();
     this.fetchUsersList = this.getFetchAllUsersEffect();
     this.updateUser = this.getUpdateUserEffect();
+    this.updateAllEditedUsers = this.getUpdateBulkUsersEffect();
   }
 
   ngrxOnStoreInit(): void {
@@ -104,9 +108,9 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
     });
   }
 
-  private getAllUsersMap(state: UsersState) {
-    return state.users.ids.reduce((acc, id) => {
-      acc.set(id, {});
+  private getBulkUsersMap(state: UsersState, userIds: number[]) {
+    return userIds.reduce((acc, id) => {
+      acc.set(id, state.users.entities[id]);
       return acc;
     }, new Map());
   }
@@ -128,11 +132,18 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
     });
   }
 
-  private getEditAllUsersUpdater() {
-    return this.updater<void>((state: UsersState) => ({
+  private getEditBulkUsersUpdater() {
+    return this.updater<number[]>((state: UsersState, userIds: number[]) => ({
       ...state,
-      editedUser: this.getAllUsersMap(state),
+      editedUser: this.getBulkUsersMap(state, userIds),
       globalEditInProgress: true
+    }));
+  }
+
+  private getGlobalEditInProgressUpdater() {
+    return this.updater<boolean>((state: UsersState, globalEditInProgress) => ({
+      ...state,
+      globalEditInProgress
     }));
   }
 
@@ -161,6 +172,33 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
                   const updateEntityState = this.getUsersEntityStateUpdater();
                   updateEntityState(adapter.updateOne(update, state.users));
                   this.disableEditModeOn(userId);
+                }
+              }));
+          }
+        )
+      ));
+  }
+
+  private getUpdateBulkUsersEffect() {
+    return this.effect<void>(
+      (trigger$) => trigger$.pipe(
+        withLatestFrom(this.state$),
+        exhaustMap(([, state]) => {
+            return this.usersService.updateBulkUsers(Object.fromEntries(state.editedUser)).pipe(
+              catchError(() => {
+                console.error('The API to update multiple users is not implemented, the response is simulated');
+                return of(Object.fromEntries(state.editedUser));
+              }),
+              tap({
+                next: (usersMap) => {
+                  const updates: Update<User>[] = Object.entries(usersMap).reduce<Update<User>[]>((acc, [userId, user]) => {
+                    acc.push({ id: +userId, changes: user });
+                    return acc;
+                  }, []);
+                  const updateEntityState = this.getUsersEntityStateUpdater();
+                  updateEntityState(adapter.updateMany(updates, state.users));
+                  this.setEditedUsers([]);
+                  this.setGlobalUserEditInProgress(false);
                 }
               }));
           }

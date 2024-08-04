@@ -3,7 +3,7 @@
 <div class="users-table-header">
   <h1>Users</h1>
   @if (globalEditInProgress$ | async){
-    <button mat-raised-button (click)="saveAll()">Save All</button>
+    <button mat-raised-button (click)="saveAll()" data-test="users-save-all-button">Save All</button>
   } @else {
     <button mat-raised-button (click)="editAll()" data-test="users-edit-all-button">Edit all</button>
   }

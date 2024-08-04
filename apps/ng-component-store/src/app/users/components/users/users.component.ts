@@ -13,7 +13,7 @@ import {
 } from '@angular/material/table';
 import { User } from '../../types/user.interface';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
-import { Observable, Subscription } from 'rxjs';
+import { firstValueFrom, Observable, Subscription } from 'rxjs';
 import { UsersStore } from '../../users.store';
 import { EditableCellComponent } from '../editable-cell/editable-cell.component';
 import { MatButton } from '@angular/material/button';
@@ -72,11 +72,12 @@ export class UsersComponent implements OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  editAll() {
-    this.usersStore.editAllUsers();
+  async editAll() {
+    const users = await firstValueFrom(this.data$);
+    this.usersStore.setEditedUsers(users.map(user => user.id));
   }
 
   saveAll() {
-
+    this.usersStore.updateAllEditedUsers();
   }
 }

@@ -42,7 +42,7 @@ export class UsersTestingUtil {
   }
 
   async mockUsersCall(data: User[]) {
-    let req = this.httpMock.expectOne(`${apiLink}/users`);
+    const req = this.httpMock.expectOne(`${apiLink}/users`);
     expect(req.request.method).toBe('GET');
 
     req.flush(data);
@@ -50,8 +50,17 @@ export class UsersTestingUtil {
   }
 
   async mockUpdateUserCall(userId: number, flushData: Partial<User> = {}) {
-    let req = this.httpMock.expectOne(`${apiLink}/users/${userId}`);
+    const req = this.httpMock.expectOne(`${apiLink}/users/${userId}`);
     expect(req.request.method).toBe('PUT');
+
+    req.flush(flushData);
+    this.httpMock.verify();
+  }
+
+  async mockBulkEditCall(flushData: Record<number, User>){
+    const req = this.httpMock.expectOne(`${apiLink}/users/bulk`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(flushData);
 
     req.flush(flushData);
     this.httpMock.verify();
