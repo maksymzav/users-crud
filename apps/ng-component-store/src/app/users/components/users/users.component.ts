@@ -59,8 +59,7 @@ export class UsersComponent implements OnDestroy {
   }
 
   onEdit(user: User) {
-    const subscription = this.usersStore.enableEditModeOn({ id: user.id, user });
-    this.subscription.add(subscription);
+    this.usersStore.setEditedUsers( [user.id]);
   }
 
   onSave(userId: number) {

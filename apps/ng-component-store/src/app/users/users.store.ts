@@ -29,8 +29,6 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
   globalEditInProgress$: Observable<boolean>;
 
   setUsersList: (usersList: User[]) => Subscription;
-  enableEditModeOn: ({ id, user }: { id: number, user: User }) => Subscription;
-  disableEditModeOn: (id: number) => Subscription;
   patchEditedUser: (update: { id: number, user: Partial<User> }) => Subscription;
   setGlobalUserEditInProgress: (globalEditInProgress: boolean) => Subscription;
 
@@ -50,8 +48,6 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
     this.globalEditInProgress$ = this.getIsGlobalEditInProgressSelector();
 
     this.setUsersList = this.getUsersListUpdater();
-    this.enableEditModeOn = this.getEditModeEnabledUserUpdater();
-    this.disableEditModeOn = this.getEditModeDisabledUserUpdater();
     this.patchEditedUser = this.getEditedUserUpdater();
     this.setGlobalUserEditInProgress = this.getGlobalEditInProgressUpdater();
 
@@ -98,28 +94,11 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
     );
   }
 
-  private getEditModeEnabledUserUpdater() {
-    return this.updater<{ id: number, user: User }>((state: UsersState, { id, user }) => {
-      state.editedUser.set(id, user);
-      return {
-        ...state,
-        editedUser: new Map(state.editedUser)
-      };
-    });
-  }
-
   private getBulkUsersMap(state: UsersState, userIds: number[]) {
     return userIds.reduce((acc, id) => {
       acc.set(id, state.users.entities[id]);
       return acc;
     }, new Map());
-  }
-
-  private getEditModeDisabledUserUpdater() {
-    return this.updater<number>((state: UsersState, id) => {
-      state.editedUser.delete(id);
-      return state;
-    });
   }
 
   private getEditedUserUpdater() {
@@ -171,7 +150,7 @@ export class UsersStore extends ComponentStore<UsersState> implements OnStoreIni
                   const update: Update<User> = { id: user.id, changes: user };
                   const updateEntityState = this.getUsersEntityStateUpdater();
                   updateEntityState(adapter.updateOne(update, state.users));
-                  this.disableEditModeOn(userId);
+                  this.setEditedUsers([]);
                 }
               }));
           }
