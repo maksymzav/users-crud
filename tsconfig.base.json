@@ -15,7 +15,9 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@data-access/*": ["libs/data-access/*/index.ts"]
+      "@data-access/*": ["libs/data-access/*/index.ts"],
+      "@feature/*/testing": ["libs/feature/*/testing/index.ts"],
+      "@utils": ["libs/utils/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
