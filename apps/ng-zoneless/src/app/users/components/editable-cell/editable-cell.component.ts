@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, Input, OnDestroy, OnInit } from '@angular/core';
 import { User } from '../../types/user.interface';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -6,6 +6,7 @@ import { UsersStore } from '../../users.store';
 import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, Subscription } from 'rxjs';
+import { EditedUsersStore } from '../../edited-users.store';
 
 const editableColumns: Record<keyof User, boolean> = {
   id: false,
@@ -27,25 +28,17 @@ const editableColumns: Record<keyof User, boolean> = {
   styleUrl: './editable-cell.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditableCellComponent implements OnDestroy, OnInit {
-  @Input({ required: true }) user!: User;
-  @Input({ required: true }) columnName!: keyof User;
+export class EditableCellComponent implements OnDestroy {
+  user = input.required<User>();
+  columnName = input.required<keyof User>();
   editableColumns = editableColumns;
   subscription = new Subscription();
   initial = true;
-  protected editedUser$ = new BehaviorSubject<User | undefined>(undefined);
-  private usersStore: UsersStore = inject(UsersStore);
-
-  ngOnInit() {
-    this.usersStore.editedUser$.subscribe((editedUserMap) => {
-      if (editedUserMap.get(this.user.id) !== this.editedUser$.value) {
-        this.editedUser$.next(editedUserMap.get(this.user.id));
-      }
-    });
-  }
+  private editedUsersStore = inject(EditedUsersStore);
+  protected editedUsers = this.editedUsersStore.getEditedUsers();
 
   updateValue(value: string) {
-    const subscription = this.usersStore.patchEditedUser({ id: this.user.id, user: { [this.columnName]: value } });
+    const subscription = this.editedUsersStore.patchEditedUser({ id: this.user().id, user: { [this.columnName()]: value } });
     this.subscription.add(subscription);
   }
 

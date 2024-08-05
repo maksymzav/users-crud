@@ -1,9 +1,7 @@
-@let editedUser = editedUser$ | async;
-
-@if (editedUser && editableColumns[columnName]) {
+@if ((editedUsers().has(user().id)) && editableColumns[columnName()]) {
   <mat-form-field appearance="fill" data-test="users-cell-edit-enabled">
-    <input matInput [ngModel]="user[columnName]" (ngModelChange)="updateValue($event)">
+    <input matInput [ngModel]="user()[columnName()]" (ngModelChange)="updateValue($event)">
   </mat-form-field>
 } @else {
-  <span>{{ user[columnName] }}</span>
+  <span>{{ user()[columnName()] }}</span>
 }

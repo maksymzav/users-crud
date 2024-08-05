@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
 import {
   MatCell,
   MatCellDef,
@@ -18,6 +18,7 @@ import { UsersStore } from '../../users.store';
 import { EditableCellComponent } from '../editable-cell/editable-cell.component';
 import { MatButton } from '@angular/material/button';
 import { provideComponentStore } from '@ngrx/component-store';
+import { EditedUsersStore } from '../../edited-users.store';
 
 @Component({
   selector: 'app-users',
@@ -42,24 +43,25 @@ import { provideComponentStore } from '@ngrx/component-store';
   styleUrl: './users.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    provideComponentStore(UsersStore)
+    provideComponentStore(UsersStore),
+    EditedUsersStore,
   ]
 })
 export class UsersComponent implements OnDestroy {
+  editedUsersStore = inject(EditedUsersStore);
+  editedUsers = this.editedUsersStore.getEditedUsers();
+  globalEditInProgress = this.editedUsersStore.getGlobalEditInProgress();
   protected data$: Observable<User[]>;
   protected displayedColumns = ['id', 'name', 'username', 'email', 'actions'];
-  protected editedUser$: Observable<Map<number, User | null>>;
-  protected globalEditInProgress$: Observable<boolean>;
   private subscription = new Subscription();
 
-  constructor(private usersStore: UsersStore) {
+  constructor(private usersStore: UsersStore, ) {
     this.data$ = this.usersStore.usersList$;
-    this.editedUser$ = this.usersStore.editedUser$;
-    this.globalEditInProgress$ = this.usersStore.globalEditInProgress$;
   }
 
-  onEdit(user: User) {
-    this.usersStore.setEditedUsers( [user.id]);
+  async onEdit(user: User) {
+    const users = await(firstValueFrom(this.data$));
+    this.editedUsersStore.setEditedUsers( [[user.id, users[user.id]]]);
   }
 
   onSave(userId: number) {
@@ -73,7 +75,8 @@ export class UsersComponent implements OnDestroy {
 
   async editAll() {
     const users = await firstValueFrom(this.data$);
-    this.usersStore.setEditedUsers(users.map(user => user.id));
+    this.editedUsersStore.setEditedUsers(users.map(user => [user.id, user]));
+    this.editedUsersStore.setGlobalUserEditInProgress(true);
   }
 
   saveAll() {
