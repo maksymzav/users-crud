@@ -1,0 +1,65 @@
+<div class="users-table-header">
+  <h1>Users</h1>
+  @if (globalEditInProgress){
+    <button mat-raised-button (click)="saveAll()" data-test="users-save-all-button">Save All</button>
+  } @else {
+    <button mat-raised-button (click)="editAll()" data-test="users-edit-all-button">Edit all</button>
+  }
+</div>
+@if (data$){
+<table mat-table [dataSource]="(dataSource$)" class="mat-elevation-z2">
+
+  <ng-container matColumnDef="id">
+    <th mat-header-cell *matHeaderCellDef>Id</th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngTemplateOutlet="cellTemplate; context: { user: element, columnName: 'id' }"></ng-container>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef>Name</th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngTemplateOutlet="cellTemplate; context: { user: element, columnName: 'name' }"></ng-container>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="username">
+    <th mat-header-cell *matHeaderCellDef>Username</th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngTemplateOutlet="cellTemplate; context: { user: element, columnName: 'username' }"></ng-container>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="email">
+    <th mat-header-cell *matHeaderCellDef>Email</th>
+    <td mat-cell *matCellDef="let element">
+      <ng-container *ngTemplateOutlet="cellTemplate; context: { user: element, columnName: 'email' }"></ng-container>
+    </td>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef></th>
+    <td mat-cell *matCellDef="let element" data-test="users-actions-column">
+      @if (editedUser.has(element.id)) {
+        <button mat-button (click)="onSave(element.id)">Save</button>
+      } @else {
+        <button mat-button (click)="onEdit(element)">Edit</button>
+      }
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>
+} @else {
+  <p>Loading...</p>
+}
+<ng-template #cellTemplate let-user="user" let-columnName="columnName">
+  @if (editedUser.has(user.id) && editableColumns[columnName]) {
+    <mat-form-field appearance="fill" data-test="users-cell-edit-enabled">
+      <input matInput [formControl]="editedUser.get(user.id).form.controls[columnName]">
+    </mat-form-field>
+  } @else {
+    <span>{{ user[columnName] }}</span>
+  }
+</ng-template>
